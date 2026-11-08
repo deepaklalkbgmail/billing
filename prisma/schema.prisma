@@ -1,0 +1,381 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Branch {
+  id              String   @id @default(uuid())
+  name            String
+  code            String   @unique  // B1, B2, B3, B4
+  address         String   @default("")
+  phone           String   @default("")
+  fssaiNo         String   @default("")
+  gstin           String   @default("")
+  receiptHeader   String   @default("")
+  receiptFooter   String   @default("Thank you! Visit again.")
+  printerType     String   @default("none") // none, usb, lan
+  printerAddress  String   @default("")
+  printerWidth    Int      @default(80) // 58 or 80mm
+  gstEnabled      Boolean  @default(false)
+  gstMode         String   @default("exclusive") // exclusive, inclusive
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  users           User[]
+  tables          Table[]
+  bills           Bill[]
+  expenses        Expense[]
+  inventoryItems  InventoryItem[]
+  stockLogsFrom   StockTransfer[]  @relation("TransferFrom")
+  stockLogsTo     StockTransfer[]  @relation("TransferTo")
+  cashDrawers     CashDrawerSession[]
+  menuItemBranches MenuItemBranch[]
+  purchases       Purchase[]
+  settings        BranchSetting[]
+}
+
+model User {
+  id            String   @id @default(uuid())
+  username      String   @unique
+  passwordHash  String
+  fullName      String
+  role          String   // SUPER_ADMIN, BRANCH_MANAGER, CASHIER
+  branchId      String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  branch        Branch?  @relation(fields: [branchId], references: [id])
+  bills         Bill[]
+  auditLogs     AuditLog[]
+  cashDrawers   CashDrawerSession[]
+}
+
+model Category {
+  id          String     @id @default(uuid())
+  name        String
+  sortOrder   Int        @default(0)
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  
+  menuItems   MenuItem[]
+}
+
+model MenuItem {
+  id              String   @id @default(uuid())
+  name            String
+  shortCode       String   @unique // numeric code like "101", "102"
+  categoryId      String
+  basePrice       Int      // price in paise (e.g., 25000 = ₹250.00)
+  gstRate         Float    @default(5.0) // percentage: 5, 12, 18, 28
+  trackInventory  Boolean  @default(false) // true for direct stock items
+  inventoryItemId String?  // link to InventoryItem for direct stock tracking
+  isVeg           Boolean  @default(true)
+  isAvailable     Boolean  @default(true)
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  category        Category          @relation(fields: [categoryId], references: [id])
+  inventoryItem   InventoryItem?    @relation(fields: [inventoryItemId], references: [id])
+  branchPrices    MenuItemBranch[]
+  billItems       BillItem[]
+  recipeItems     RecipeIngredient[]
+}
+
+model MenuItemBranch {
+  id          String   @id @default(uuid())
+  menuItemId  String
+  branchId    String
+  price       Int?     // null = use base price
+  isAvailable Boolean  @default(true)
+  
+  menuItem    MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  branch      Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@unique([menuItemId, branchId])
+}
+
+model Table {
+  id        String   @id @default(uuid())
+  number    Int
+  name      String   // "Table 1", "VIP 1", etc.
+  capacity  Int      @default(4)
+  branchId  String
+  isActive  Boolean  @default(true)
+  
+  branch    Branch   @relation(fields: [branchId], references: [id])
+  bills     Bill[]
+  
+  @@unique([branchId, number])
+}
+
+model Bill {
+  id              String    @id @default(uuid())
+  billNumber      String    @unique
+  branchId        String
+  userId          String    // cashier who created
+  tableId         String?
+  orderType       String    // DINE_IN, TAKEAWAY, DELIVERY
+  customerName    String    @default("")
+  customerPhone   String    @default("")
+  customerAddress String    @default("")
+  
+  subtotal        Int       @default(0) // sum of item totals in paise
+  discountType    String    @default("flat") // flat, percent
+  discountValue   Int       @default(0)   // paise or basis points (percent * 100)
+  discountAmount  Int       @default(0)   // calculated discount in paise
+  parcelCharges   Int       @default(0)
+  
+  gstEnabled      Boolean   @default(false)
+  cgstAmount      Int       @default(0)
+  sgstAmount      Int       @default(0)
+  totalGst        Int       @default(0)
+  
+  grandTotal      Int       @default(0)
+  roundOff        Int       @default(0)   // rounding in paise
+  netTotal        Int       @default(0)   // final payable in paise
+  
+  status          String    @default("ACTIVE") // ACTIVE, HELD, SETTLED, CANCELLED
+  isGstBill       Boolean   @default(false) // whether GST was applied on this bill
+  notes           String    @default("")
+  
+  settledAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  branch          Branch    @relation(fields: [branchId], references: [id])
+  user            User      @relation(fields: [userId], references: [id])
+  table           Table?    @relation(fields: [tableId], references: [id])
+  items           BillItem[]
+  payments        Payment[]
+}
+
+model BillItem {
+  id            String   @id @default(uuid())
+  billId        String
+  menuItemId    String
+  itemName      String   // denormalized for receipt
+  quantity      Int
+  unitPrice     Int      // price per unit in paise
+  discountType  String   @default("flat") // flat, percent
+  discountValue Int      @default(0)
+  discountAmount Int     @default(0)
+  gstRate       Float    @default(0)
+  gstAmount     Int      @default(0)
+  total         Int      // (unitPrice * qty) - discount + gst in paise
+  notes         String   @default("") // "Less spicy", "Extra cheese"
+  isKotPrinted  Boolean  @default(false)
+  kotNumber     Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  bill          Bill     @relation(fields: [billId], references: [id], onDelete: Cascade)
+  menuItem      MenuItem @relation(fields: [menuItemId], references: [id])
+}
+
+model Payment {
+  id          String   @id @default(uuid())
+  billId      String
+  method      String   // CASH, UPI, CARD, ZOMATO, SWIGGY, PAYTM, CREDIT
+  amount      Int      // in paise
+  reference   String   @default("") // transaction ID, card last 4, etc.
+  createdAt   DateTime @default(now())
+
+  bill        Bill     @relation(fields: [billId], references: [id], onDelete: Cascade)
+}
+
+model InventoryItem {
+  id              String   @id @default(uuid())
+  name            String
+  unit            String   // kg, litre, piece, cylinder, packet
+  currentStock    Float    @default(0)
+  minStock        Float    @default(0) // low stock alert threshold
+  costPerUnit     Int      @default(0) // in paise
+  branchId        String
+  trackingMode    String   @default("direct") // direct, recipe
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  branch          Branch   @relation(fields: [branchId], references: [id])
+  menuItems       MenuItem[]
+  recipeUsages    RecipeIngredient[]
+  stockLogs       StockLog[]
+  purchaseItems   PurchaseItem[]
+  transferItems   StockTransferItem[]
+}
+
+model RecipeIngredient {
+  id              String   @id @default(uuid())
+  menuItemId      String
+  inventoryItemId String
+  quantityUsed    Float    // amount of inventory item used per 1 dish
+
+  menuItem        MenuItem      @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
+
+  @@unique([menuItemId, inventoryItemId])
+}
+
+model StockLog {
+  id              String   @id @default(uuid())
+  inventoryItemId String
+  type            String   // PURCHASE, SALE_DEDUCT, MANUAL_ADJUST, TRANSFER_IN, TRANSFER_OUT, WASTAGE, OPENING
+  quantity        Float    // positive = add, negative = deduct
+  balanceAfter    Float
+  reference       String   @default("") // bill number, purchase id, notes
+  createdAt       DateTime @default(now())
+
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
+}
+
+model Supplier {
+  id        String     @id @default(uuid())
+  name      String
+  phone     String     @default("")
+  address   String     @default("")
+  gstin     String     @default("")
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+
+  purchases Purchase[]
+}
+
+model Purchase {
+  id              String   @id @default(uuid())
+  branchId        String
+  supplierId      String?
+  invoiceNumber   String   @default("")
+  invoiceDate     DateTime @default(now())
+  totalAmount     Int      @default(0) // in paise
+  paidAmount      Int      @default(0)
+  paymentStatus   String   @default("UNPAID") // PAID, PARTIAL, UNPAID, CREDIT
+  paymentMode     String   @default("CASH")
+  notes           String   @default("")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  branch          Branch   @relation(fields: [branchId], references: [id])
+  supplier        Supplier? @relation(fields: [supplierId], references: [id])
+  items           PurchaseItem[]
+}
+
+model PurchaseItem {
+  id              String   @id @default(uuid())
+  purchaseId      String
+  inventoryItemId String
+  quantity        Float
+  unitPrice       Int      // in paise
+  total           Int      // in paise
+
+  purchase        Purchase      @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
+}
+
+model StockTransfer {
+  id            String   @id @default(uuid())
+  fromBranchId  String
+  toBranchId    String
+  status        String   @default("PENDING") // PENDING, COMPLETED, CANCELLED
+  notes         String   @default("")
+  createdAt     DateTime @default(now())
+  completedAt   DateTime?
+
+  fromBranch    Branch   @relation("TransferFrom", fields: [fromBranchId], references: [id])
+  toBranch      Branch   @relation("TransferTo", fields: [toBranchId], references: [id])
+  items         StockTransferItem[]
+}
+
+model StockTransferItem {
+  id              String   @id @default(uuid())
+  transferId      String
+  inventoryItemId String
+  quantity        Float
+
+  transfer        StockTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
+}
+
+model ExpenseCategory {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  isActive  Boolean   @default(true)
+  
+  expenses  Expense[]
+}
+
+model Expense {
+  id              String   @id @default(uuid())
+  branchId        String
+  categoryId      String
+  description     String
+  amount          Int      // in paise
+  paymentSource   String   @default("COUNTER_CASH") // COUNTER_CASH, OWNER_BANK
+  paymentMode     String   @default("CASH") // CASH, UPI, BANK_TRANSFER
+  reference       String   @default("")
+  expenseDate     DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  branch          Branch           @relation(fields: [branchId], references: [id])
+  category        ExpenseCategory  @relation(fields: [categoryId], references: [id])
+}
+
+model CashDrawerSession {
+  id              String    @id @default(uuid())
+  branchId        String
+  userId          String
+  openingBalance  Int       @default(0) // in paise
+  cashSales       Int       @default(0)
+  cashExpenses    Int       @default(0)
+  expectedClosing Int       @default(0) // calculated
+  actualClosing   Int?      // entered by cashier
+  difference      Int?      // actual - expected
+  status          String    @default("OPEN") // OPEN, CLOSED
+  openedAt        DateTime  @default(now())
+  closedAt        DateTime?
+  notes           String    @default("")
+
+  branch          Branch @relation(fields: [branchId], references: [id])
+  user            User   @relation(fields: [userId], references: [id])
+}
+
+model BranchSetting {
+  id        String @id @default(uuid())
+  branchId  String
+  key       String
+  value     String
+  
+  branch    Branch @relation(fields: [branchId], references: [id])
+  
+  @@unique([branchId, key])
+}
+
+model GlobalSetting {
+  id    String @id @default(uuid())
+  key   String @unique
+  value String
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  action    String   // CREATE_BILL, DELETE_BILL, MODIFY_BILL, LOGIN, etc.
+  entity    String   // Bill, MenuItem, etc.
+  entityId  String   @default("")
+  details   String   @default("") // JSON string with change details
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model PaymentMode {
+  id        String  @id @default(uuid())
+  name      String  @unique // CASH, UPI, CARD, ZOMATO, SWIGGY, etc.
+  isActive  Boolean @default(true)
+  sortOrder Int     @default(0)
+}

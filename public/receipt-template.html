@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Receipt</title>
+  <style>
+    @media print {
+      @page {
+        margin: 0;
+        size: 80mm auto;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+      }
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      line-height: 1.4;
+      width: 80mm;
+      max-width: 80mm;
+      padding: 4mm;
+      color: #000;
+      background: #fff;
+    }
+
+    body.width-58 {
+      width: 58mm;
+      max-width: 58mm;
+      font-size: 11px;
+    }
+
+    .center { text-align: center; }
+    .right { text-align: right; }
+    .left { text-align: left; }
+    .bold { font-weight: bold; }
+    .large { font-size: 16px; }
+    .small { font-size: 10px; }
+
+    .header {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .header .brand {
+      font-size: 18px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .header .address,
+    .header .phone,
+    .header .fssai,
+    .header .gstin {
+      font-size: 10px;
+      margin-top: 2px;
+    }
+
+    .divider {
+      border-top: 1px dashed #000;
+      margin: 4px 0;
+    }
+
+    .divider-double {
+      border-top: 2px solid #000;
+      margin: 4px 0;
+    }
+
+    .bill-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+    }
+
+    .bill-info .col {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 4px 0;
+    }
+
+    .items-table th {
+      text-align: left;
+      font-size: 11px;
+      border-bottom: 1px solid #000;
+      padding: 2px 0;
+    }
+
+    .items-table th:nth-child(2),
+    .items-table td:nth-child(2) {
+      text-align: center;
+      width: 30px;
+    }
+
+    .items-table th:nth-child(3),
+    .items-table td:nth-child(3) {
+      text-align: right;
+      width: 50px;
+    }
+
+    .items-table th:nth-child(4),
+    .items-table td:nth-child(4) {
+      text-align: right;
+      width: 60px;
+    }
+
+    .items-table td {
+      padding: 2px 0;
+      font-size: 11px;
+    }
+
+    .item-notes {
+      font-size: 9px;
+      font-style: italic;
+      color: #555;
+      padding-left: 8px;
+    }
+
+    .totals {
+      margin: 4px 0;
+    }
+
+    .totals .row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      padding: 1px 0;
+    }
+
+    .totals .row.grand-total {
+      font-size: 16px;
+      font-weight: bold;
+      border-top: 2px solid #000;
+      border-bottom: 2px solid #000;
+      padding: 4px 0;
+      margin: 4px 0;
+    }
+
+    .payment-info {
+      font-size: 10px;
+      margin: 4px 0;
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 10px;
+      margin-top: 8px;
+      padding-top: 4px;
+      border-top: 1px dashed #000;
+    }
+
+    .footer .thank-you {
+      font-size: 12px;
+      font-weight: bold;
+      margin-top: 4px;
+    }
+
+    .kot-header {
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+      border: 2px solid #000;
+      padding: 4px;
+    }
+
+    .kot-table-info {
+      font-size: 16px;
+      font-weight: bold;
+      margin: 4px 0;
+    }
+
+    .kot-items {
+      width: 100%;
+      margin: 8px 0;
+    }
+
+    .kot-items td {
+      font-size: 14px;
+      padding: 4px 0;
+      border-bottom: 1px dotted #ccc;
+    }
+
+    .kot-items .qty {
+      text-align: center;
+      width: 40px;
+      font-weight: bold;
+      font-size: 16px;
+    }
+
+    .kot-items .notes {
+      font-size: 12px;
+      font-style: italic;
+      color: #333;
+      padding-left: 12px;
+    }
+
+    .no-print {
+      display: block;
+    }
+
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- This template is populated dynamically by JavaScript -->
+  <div id="receipt-content"></div>
+
+  <script>
+    // Receipt data will be injected by the application
+    function renderReceipt(data) {
+      const container = document.getElementById('receipt-content');
+      
+      if (data.printerWidth === 58) {
+        document.body.classList.add('width-58');
+      }
+
+      if (data.type === 'KOT') {
+        container.innerHTML = renderKOT(data);
+      } else {
+        container.innerHTML = renderBillReceipt(data);
+      }
+    }
+
+    function renderBillReceipt(data) {
+      const { branch, bill, items, payments, settings } = data;
+      
+      let html = '';
+
+      // Header
+      html += '<div class="header">';
+      if (settings?.showLogo) {
+        html += '<div class="brand">' + escHtml(branch.name) + '</div>';
+      }
+      if (branch.address) {
+        html += '<div class="address">' + escHtml(branch.address) + '</div>';
+      }
+      if (branch.phone) {
+        html += '<div class="phone">Ph: ' + escHtml(branch.phone) + '</div>';
+      }
+      if (branch.fssaiNo) {
+        html += '<div class="fssai">FSSAI: ' + escHtml(branch.fssaiNo) + '</div>';
+      }
+      if (branch.gstin && bill.isGstBill) {
+        html += '<div class="gstin">GSTIN: ' + escHtml(branch.gstin) + '</div>';
+      }
+      if (branch.receiptHeader) {
+        html += '<div class="small">' + escHtml(branch.receiptHeader) + '</div>';
+      }
+      html += '</div>';
+
+      // Bill Info
+      html += '<div class="divider"></div>';
+      html += '<div class="bill-info">';
+      html += '<div class="col"><span>Bill#: ' + escHtml(bill.billNumber) + '</span>';
+      html += '<span>Type: ' + escHtml(bill.orderType.replace('_', ' ')) + '</span></div>';
+      html += '<div class="col right"><span>' + formatDate(bill.createdAt) + '</span>';
+      html += '<span>' + formatTime(bill.createdAt) + '</span></div>';
+      html += '</div>';
+
+      if (bill.tableName) {
+        html += '<div class="bold">Table: ' + escHtml(bill.tableName) + '</div>';
+      }
+      if (bill.customerName) {
+        html += '<div>Customer: ' + escHtml(bill.customerName) + '</div>';
+      }
+      if (settings?.showCashier && bill.cashierName) {
+        html += '<div class="small">Cashier: ' + escHtml(bill.cashierName) + '</div>';
+      }
+
+      // Items
+      html += '<div class="divider"></div>';
+      html += '<table class="items-table">';
+      html += '<tr><th>Item</th><th>Qty</th><th>Rate</th><th>Amt</th></tr>';
+
+      items.forEach(function(item) {
+        html += '<tr>';
+        html += '<td>' + escHtml(item.itemName) + '</td>';
+        html += '<td>' + item.quantity + '</td>';
+        html += '<td>' + formatMoney(item.unitPrice) + '</td>';
+        html += '<td>' + formatMoney(item.total) + '</td>';
+        html += '</tr>';
+        if (item.notes) {
+          html += '<tr><td colspan="4" class="item-notes">→ ' + escHtml(item.notes) + '</td></tr>';
+        }
+        if (item.discountAmount > 0) {
+          html += '<tr><td colspan="3" class="small">  Discount</td>';
+          html += '<td class="small right">-' + formatMoney(item.discountAmount) + '</td></tr>';
+        }
+      });
+      html += '</table>';
+
+      // Totals
+      html += '<div class="divider"></div>';
+      html += '<div class="totals">';
+      html += '<div class="row"><span>Subtotal</span><span>' + formatMoney(bill.subtotal) + '</span></div>';
+
+      if (bill.discountAmount > 0) {
+        html += '<div class="row"><span>Discount</span><span>-' + formatMoney(bill.discountAmount) + '</span></div>';
+      }
+
+      if (bill.isGstBill && settings?.showGstBreakdown) {
+        html += '<div class="row"><span>CGST</span><span>' + formatMoney(bill.cgstAmount) + '</span></div>';
+        html += '<div class="row"><span>SGST</span><span>' + formatMoney(bill.sgstAmount) + '</span></div>';
+      }
+
+      if (bill.parcelCharges > 0) {
+        html += '<div class="row"><span>Parcel Charges</span><span>' + formatMoney(bill.parcelCharges) + '</span></div>';
+      }
+
+      if (bill.roundOff !== 0) {
+        html += '<div class="row"><span>Round Off</span><span>' + (bill.roundOff > 0 ? '+' : '') + formatMoney(bill.roundOff) + '</span></div>';
+      }
+
+      html += '<div class="row grand-total"><span>TOTAL</span><span>₹' + formatMoney(bill.netTotal) + '</span></div>';
+      html += '</div>';
+
+      // Payment Info
+      if (payments && payments.length > 0) {
+        html += '<div class="payment-info">';
+        html += '<div class="bold">Payment:</div>';
+        payments.forEach(function(p) {
+          html += '<div class="row"><span>' + escHtml(p.method) + '</span><span>' + formatMoney(p.amount) + '</span></div>';
+        });
+        html += '</div>';
+      }
+
+      // Footer
+      html += '<div class="footer">';
+      if (branch.receiptFooter) {
+        html += '<div>' + escHtml(branch.receiptFooter) + '</div>';
+      }
+      if (settings?.showThankYou !== false) {
+        html += '<div class="thank-you">Thank You! Visit Again.</div>';
+      }
+      if (!bill.isGstBill) {
+        html += '<div class="small">Bill of Supply</div>';
+      }
+      html += '</div>';
+
+      return html;
+    }
+
+    function renderKOT(data) {
+      const { bill, items, branch, kotNumber } = data;
+      
+      let html = '';
+      html += '<div class="kot-header">*** KOT ***</div>';
+      html += '<div class="kot-table-info">';
+      
+      if (bill.tableName) {
+        html += 'Table: ' + escHtml(bill.tableName) + ' | ';
+      }
+      html += escHtml(bill.orderType.replace('_', ' '));
+      html += '</div>';
+
+      html += '<div>Bill#: ' + escHtml(bill.billNumber) + '</div>';
+      html += '<div>Time: ' + formatTime(bill.createdAt) + '</div>';
+      if (kotNumber) {
+        html += '<div>KOT#: ' + kotNumber + '</div>';
+      }
+
+      html += '<div class="divider-double"></div>';
+
+      html += '<table class="kot-items">';
+      items.forEach(function(item) {
+        html += '<tr>';
+        html += '<td class="qty">' + item.quantity + 'x</td>';
+        html += '<td>' + escHtml(item.itemName) + '</td>';
+        html += '</tr>';
+        if (item.notes) {
+          html += '<tr><td></td><td class="notes">** ' + escHtml(item.notes) + ' **</td></tr>';
+        }
+      });
+      html += '</table>';
+
+      html += '<div class="divider-double"></div>';
+      html += '<div class="center small">Printed: ' + new Date().toLocaleTimeString() + '</div>';
+
+      return html;
+    }
+
+    function formatMoney(paise) {
+      return (paise / 100).toFixed(2);
+    }
+
+    function formatDate(dateStr) {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+
+    function formatTime(dateStr) {
+      const d = new Date(dateStr);
+      return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function escHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // Auto-print when data is available
+    if (window.receiptData) {
+      renderReceipt(window.receiptData);
+      window.print();
+    }
+  </script>
+</body>
+</html>
+
