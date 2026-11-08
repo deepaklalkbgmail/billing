@@ -86,70 +86,16 @@ export function DayClosePage() {
     setLoading(true);
     try {
       const [currRes, histRes] = await Promise.all([
-        expenseAPI.getCurrentDrawer(activeBranchId || 'b1').catch(() => ({ data: null })),
+        expenseAPI.getCurrentDrawer(activeBranchId as string).catch(() => ({ data: null })),
         expenseAPI.getDrawerHistory({ branchId: activeBranchId || undefined }).catch(() => ({ data: [] })),
       ]);
 
       const curr = currRes?.data?.data || currRes?.data;
       const hist = histRes?.data?.data || histRes?.data || [];
 
-      if (curr && curr.status === 'OPEN') {
-        setCurrentSession(curr);
-      } else {
-        // Fallback sample active session for testing
-        const sampleOpen: DrawerSession = {
-          id: 'sess-active-1',
-          branchId: activeBranchId || 'b1',
-          userId: user?.id || 'u-1',
-          openingBalance: 300000, // ₹3,000.00
-          cashSales: 1850000,    // ₹18,500.00
-          cashExpenses: 233000,  // ₹2,330.00
-          expectedClosing: 1917000, // ₹19,170.00
-          actualClosing: null,
-          difference: null,
-          status: 'OPEN',
-          openedAt: new Date(Date.now() - 28800000).toISOString(),
-          closedAt: null,
-          notes: '',
-          user: { fullName: user?.fullName || 'Cashier 1' },
-        };
-        setCurrentSession(sampleOpen);
-      }
+      setCurrentSession(curr && curr.status === 'OPEN' ? curr : null);
 
-      const defaultHistory: DrawerSession[] = hist.length > 0 ? hist : [
-        {
-          id: 'sess-old-1',
-          branchId: 'b1',
-          userId: 'u-1',
-          openingBalance: 250000,
-          cashSales: 2420000,
-          cashExpenses: 310000,
-          expectedClosing: 2360000,
-          actualClosing: 2360000,
-          difference: 0,
-          status: 'CLOSED',
-          openedAt: new Date(Date.now() - 172800000).toISOString(),
-          closedAt: new Date(Date.now() - 144000000).toISOString(),
-          notes: 'Balanced cleanly without discrepancies',
-          user: { fullName: 'Deepak (Cashier)' },
-        },
-        {
-          id: 'sess-old-2',
-          branchId: 'b1',
-          userId: 'u-1',
-          openingBalance: 200000,
-          cashSales: 3150000,
-          cashExpenses: 450000,
-          expectedClosing: 2900000,
-          actualClosing: 2880000,
-          difference: -20000, // -₹200.00
-          status: 'CLOSED',
-          openedAt: new Date(Date.now() - 259200000).toISOString(),
-          closedAt: new Date(Date.now() - 230400000).toISOString(),
-          notes: 'Shortage ₹200 investigated - coin change shortage',
-          user: { fullName: 'Deepak (Cashier)' },
-        },
-      ];
+      const defaultHistory: DrawerSession[] = hist;
 
       setHistory(defaultHistory);
     } catch (err) {
@@ -169,26 +115,11 @@ export function DayClosePage() {
 
     try {
       const res = await expenseAPI.openDrawer({
-        branchId: activeBranchId || user?.branchId || 'b1',
+        branchId: (activeBranchId || user?.branchId) as string,
         openingBalance: openingPaise,
-      }).catch(() => null);
+      });
 
-      const newSession: DrawerSession = res?.data?.data || {
-        id: `sess-${Date.now()}`,
-        branchId: activeBranchId || 'b1',
-        userId: user?.id || 'u-1',
-        openingBalance: openingPaise,
-        cashSales: 0,
-        cashExpenses: 0,
-        expectedClosing: openingPaise,
-        actualClosing: null,
-        difference: null,
-        status: 'OPEN',
-        openedAt: new Date().toISOString(),
-        closedAt: null,
-        notes: '',
-        user: { fullName: user?.fullName || 'Active User' },
-      };
+      const newSession: DrawerSession = res.data.data;
 
       setCurrentSession(newSession);
       toast.success('Cash drawer shift opened successfully!');
@@ -213,7 +144,7 @@ export function DayClosePage() {
       await expenseAPI.closeDrawer(currentSession.id, {
         actualClosing: actualPaise,
         notes: closeNotes.trim(),
-      }).catch(() => {});
+      });
 
       const closedSession: DrawerSession = {
         ...currentSession,

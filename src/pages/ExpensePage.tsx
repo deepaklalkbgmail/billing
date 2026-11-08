@@ -105,21 +105,9 @@ export function ExpensePage() {
       const expData = expRes.data?.data || expRes.data || [];
       const catData = catRes.data?.data || catRes.data || [];
 
-      const defaultCats: ExpenseCategory[] = catData.length > 0 ? catData : [
-        { id: 'cat-1', name: 'Vegetables & Produce' },
-        { id: 'cat-2', name: 'Dairy & Poultry' },
-        { id: 'cat-3', name: 'Cleaning & Maintenance' },
-        { id: 'cat-4', name: 'Packaging Materials' },
-        { id: 'cat-5', name: 'Staff Welfare & Tea' },
-        { id: 'cat-6', name: 'Utilities & Fuel (Gas/Electric)' },
-      ];
+      const defaultCats: ExpenseCategory[] = catData;
 
-      const defaultExpenses: Expense[] = expData.length > 0 ? expData : [
-        { id: 'exp-1', branchId: 'b1', categoryId: 'cat-1', description: 'Fresh Coriander, Ginger & Green Chillies', amount: 48000, paymentSource: 'COUNTER_CASH', paymentMode: 'CASH', reference: 'Mandi Receipt', expenseDate: new Date().toISOString(), category: defaultCats[0] },
-        { id: 'exp-2', branchId: 'b1', categoryId: 'cat-6', description: 'Commercial LPG Cylinder Refill', amount: 185000, paymentSource: 'COUNTER_CASH', paymentMode: 'CASH', reference: 'HP Gas receipt', expenseDate: new Date().toISOString(), category: defaultCats[5] },
-        { id: 'exp-3', branchId: 'b1', categoryId: 'cat-4', description: 'Takeaway food boxes and polybags', amount: 125000, paymentSource: 'OWNER_BANK', paymentMode: 'UPI', reference: 'UPI ref 98213890', expenseDate: new Date(Date.now() - 86400000).toISOString(), category: defaultCats[3] },
-        { id: 'exp-4', branchId: 'b1', categoryId: 'cat-3', description: 'Floor cleaner & dishwashing liquid batch', amount: 62000, paymentSource: 'COUNTER_CASH', paymentMode: 'CASH', reference: 'DMart Bill', expenseDate: new Date(Date.now() - 86400000).toISOString(), category: defaultCats[2] },
-      ];
+      const defaultExpenses: Expense[] = expData;
 
       setCategories(defaultCats);
       setExpenses(defaultExpenses);
@@ -182,7 +170,7 @@ export function ExpensePage() {
     }
 
     const payload = {
-      branchId: activeBranchId || user?.branchId || 'b1',
+      branchId: (activeBranchId || user?.branchId) as string,
       categoryId,
       description: description.trim(),
       amount: amountPaise,
@@ -194,7 +182,7 @@ export function ExpensePage() {
 
     try {
       if (editingExpense) {
-        await expenseAPI.updateExpense(editingExpense.id, payload).catch(() => {});
+        await expenseAPI.updateExpense(editingExpense.id, payload);
         setExpenses((prev) =>
           prev.map((e) =>
             e.id === editingExpense.id
@@ -204,12 +192,8 @@ export function ExpensePage() {
         );
         toast.success('Expense record updated');
       } else {
-        const res = await expenseAPI.createExpense(payload).catch(() => null);
-        const created = res?.data?.data || {
-          id: `exp-${Date.now()}`,
-          ...payload,
-          category: categories.find((c) => c.id === categoryId),
-        };
+        const res = await expenseAPI.createExpense(payload);
+        const created = res.data.data;
         setExpenses((prev) => [created, ...prev]);
         toast.success('Expense recorded successfully');
       }
@@ -222,7 +206,7 @@ export function ExpensePage() {
   const handleDeleteExpense = async (id: string) => {
     if (!confirm('Are you sure you want to delete this expense record?')) return;
     try {
-      await expenseAPI.deleteExpense(id).catch(() => {});
+      await expenseAPI.deleteExpense(id);
       setExpenses((prev) => prev.filter((e) => e.id !== id));
       toast.success('Expense deleted');
     } catch (err) {
@@ -237,11 +221,8 @@ export function ExpensePage() {
       return;
     }
     try {
-      const res = await expenseAPI.createCategory({ name: newCatName.trim() }).catch(() => null);
-      const created = res?.data?.data || {
-        id: `cat-${Date.now()}`,
-        name: newCatName.trim(),
-      };
+      const res = await expenseAPI.createCategory({ name: newCatName.trim() });
+      const created = res.data.data;
       setCategories((prev) => [...prev, created]);
       setCategoryId(created.id);
       setNewCatName('');

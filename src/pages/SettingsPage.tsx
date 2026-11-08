@@ -58,23 +58,23 @@ export function SettingsPage() {
   const [saving, setSaving] = useState<boolean>(false);
 
   // Branch Profile State
-  const [branchName, setBranchName] = useState('Downtown Main Branch');
-  const [branchCode, setBranchCode] = useState('B1');
-  const [branchAddress, setBranchAddress] = useState('124 MG Road, Commercial Street');
-  const [branchPhone, setBranchPhone] = useState('+91 98765 43210');
-  const [fssaiNo, setFssaiNo] = useState('11523000000123');
-  const [gstin, setGstin] = useState('27AAAAA0000A1Z5');
-  const [receiptHeader, setReceiptHeader] = useState('Welcome to RestoPOS Downtown');
+  const [branchName, setBranchName] = useState('');
+  const [branchCode, setBranchCode] = useState('');
+  const [branchAddress, setBranchAddress] = useState('');
+  const [branchPhone, setBranchPhone] = useState('');
+  const [fssaiNo, setFssaiNo] = useState('');
+  const [gstin, setGstin] = useState('');
+  const [receiptHeader, setReceiptHeader] = useState('');
   const [receiptFooter, setReceiptFooter] = useState('Thank you! Visit us again.');
 
   // GST Settings
-  const [gstEnabled, setGstEnabled] = useState(true);
+  const [gstEnabled, setGstEnabled] = useState(false);
   const [gstMode, setGstMode] = useState('exclusive');
   const [compositeScheme, setCompositeScheme] = useState(false);
 
   // Printer Settings
-  const [printerType, setPrinterType] = useState('lan');
-  const [printerAddress, setPrinterAddress] = useState('192.168.1.200:9100');
+  const [printerType, setPrinterType] = useState('none');
+  const [printerAddress, setPrinterAddress] = useState('');
   const [printerWidth, setPrinterWidth] = useState('80');
 
   // Receipt Template Toggles
@@ -84,21 +84,10 @@ export function SettingsPage() {
   const [showFssai, setShowFssai] = useState(true);
 
   // Payment Modes List
-  const [paymentModes, setPaymentModes] = useState<any[]>([
-    { id: 'pm-1', name: 'CASH', isActive: true, sortOrder: 1 },
-    { id: 'pm-2', name: 'UPI / QR', isActive: true, sortOrder: 2 },
-    { id: 'pm-3', name: 'CREDIT / DEBIT CARD', isActive: true, sortOrder: 3 },
-    { id: 'pm-4', name: 'ZOMATO ONLINE', isActive: true, sortOrder: 4 },
-    { id: 'pm-5', name: 'SWIGGY ONLINE', isActive: true, sortOrder: 5 },
-    { id: 'pm-6', name: 'PAYTM WALLET', isActive: true, sortOrder: 6 },
-  ]);
+  const [paymentModes, setPaymentModes] = useState<any[]>([]);
 
   // Users Management
-  const [usersList, setUsersList] = useState<any[]>([
-    { id: 'u-1', username: 'admin', fullName: 'Super Administrator', role: 'SUPER_ADMIN', branchId: null, isActive: true },
-    { id: 'u-2', username: 'manager1', fullName: 'Rajesh Sharma', role: 'BRANCH_MANAGER', branchId: 'b1', isActive: true },
-    { id: 'u-3', username: 'cashier1', fullName: 'Deepak Verma', role: 'CASHIER', branchId: 'b1', isActive: true },
-  ]);
+  const [usersList, setUsersList] = useState<any[]>([]);
 
   // User Dialogs
   const [userDialogOpen, setUserDialogOpen] = useState(false);
@@ -113,10 +102,7 @@ export function SettingsPage() {
   const [newPasswordInput, setNewPasswordInput] = useState('');
 
   // Backup State
-  const [backupsList, setBackupsList] = useState<any[]>([
-    { id: 'bk-1', filename: 'restopos_backup_20261107_230000.db', size: '4.2 MB', createdAt: '2026-11-07 23:00' },
-    { id: 'bk-2', filename: 'restopos_backup_20261106_230000.db', size: '4.0 MB', createdAt: '2026-11-06 23:00' },
-  ]);
+  const [backupsList, setBackupsList] = useState<any[]>([]);
 
   useEffect(() => {
     loadSettings();
@@ -126,7 +112,7 @@ export function SettingsPage() {
     setLoading(true);
     try {
       const [branchRes, pmRes, uRes, bkRes] = await Promise.all([
-        branchAPI.getById(activeBranchId || 'b1').catch(() => null),
+        branchAPI.getById(activeBranchId as string).catch(() => null),
         settingsAPI.getPaymentModes().catch(() => null),
         settingsAPI.getUsers().catch(() => null),
         settingsAPI.getBackups().catch(() => null),
@@ -134,16 +120,16 @@ export function SettingsPage() {
 
       if (branchRes?.data?.data || branchRes?.data) {
         const b = branchRes.data?.data || branchRes.data;
-        setBranchName(b.name || branchName);
-        setBranchCode(b.code || branchCode);
-        setBranchAddress(b.address || branchAddress);
-        setBranchPhone(b.phone || branchPhone);
-        setFssaiNo(b.fssaiNo || fssaiNo);
-        setGstin(b.gstin || gstin);
-        setReceiptHeader(b.receiptHeader || receiptHeader);
-        setReceiptFooter(b.receiptFooter || receiptFooter);
-        setPrinterType(b.printerType || printerType);
-        setPrinterAddress(b.printerAddress || printerAddress);
+        setBranchName(b.name ?? '');
+        setBranchCode(b.code ?? '');
+        setBranchAddress(b.address ?? '');
+        setBranchPhone(b.phone ?? '');
+        setFssaiNo(b.fssaiNo ?? '');
+        setGstin(b.gstin ?? '');
+        setReceiptHeader(b.receiptHeader ?? '');
+        setReceiptFooter(b.receiptFooter ?? '');
+        setPrinterType(b.printerType ?? '');
+        setPrinterAddress(b.printerAddress ?? '');
         setPrinterWidth(String(b.printerWidth || printerWidth));
         setGstEnabled(b.gstEnabled ?? gstEnabled);
         setGstMode(b.gstMode || gstMode);
@@ -151,17 +137,17 @@ export function SettingsPage() {
 
       if (pmRes?.data?.data || pmRes?.data) {
         const pm = pmRes.data?.data || pmRes.data;
-        if (Array.isArray(pm) && pm.length > 0) setPaymentModes(pm);
+        if (Array.isArray(pm)) setPaymentModes(pm);
       }
 
       if (uRes?.data?.data || uRes?.data) {
         const u = uRes.data?.data || uRes.data;
-        if (Array.isArray(u) && u.length > 0) setUsersList(u);
+        if (Array.isArray(u)) setUsersList(u);
       }
 
       if (bkRes?.data?.data || bkRes?.data) {
         const bk = bkRes.data?.data || bkRes.data;
-        if (Array.isArray(bk) && bk.length > 0) setBackupsList(bk);
+        if (Array.isArray(bk)) setBackupsList(bk);
       }
     } catch (err) {
       console.error('Settings load error:', err);
@@ -173,7 +159,7 @@ export function SettingsPage() {
   const handleSaveBranch = async () => {
     setSaving(true);
     try {
-      await branchAPI.update(activeBranchId || 'b1', {
+      await branchAPI.update(activeBranchId as string, {
         name: branchName,
         address: branchAddress,
         phone: branchPhone,
@@ -186,7 +172,7 @@ export function SettingsPage() {
         printerType,
         printerAddress,
         printerWidth: parseInt(printerWidth) || 80,
-      }).catch(() => {});
+      });
 
       toast.success('Settings updated successfully!');
     } catch (err) {
@@ -214,14 +200,10 @@ export function SettingsPage() {
         password: uPassword,
         fullName: uFullName.trim(),
         role: uRole,
-        branchId: uRole === 'SUPER_ADMIN' ? null : (activeBranchId || 'b1'),
+        branchId: uRole === 'SUPER_ADMIN' ? null : (activeBranchId as string),
       };
-      const res = await settingsAPI.createUser(payload).catch(() => null);
-      const created = res?.data?.data || {
-        id: `u-${Date.now()}`,
-        ...payload,
-        isActive: true,
-      };
+      const res = await settingsAPI.createUser(payload);
+      const created = res.data.data;
       setUsersList((prev) => [...prev, created]);
       setUserDialogOpen(false);
       setUUsername('');
@@ -237,7 +219,7 @@ export function SettingsPage() {
   const handleResetPassword = async () => {
     if (!newPasswordInput || !selectedUserId) return;
     try {
-      await settingsAPI.resetPassword(selectedUserId, newPasswordInput).catch(() => {});
+      await settingsAPI.resetPassword(selectedUserId, newPasswordInput);
       toast.success('Password updated successfully');
       setResetDialogOpen(false);
       setNewPasswordInput('');
@@ -250,7 +232,7 @@ export function SettingsPage() {
   const handleCreateBackup = async () => {
     try {
       toast.loading('Generating SQLite database snapshot...', { id: 'bk' });
-      await settingsAPI.createBackup().catch(() => {});
+      await settingsAPI.createBackup();
       const newBackup = {
         id: `bk-${Date.now()}`,
         filename: `restopos_backup_${new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14)}.db`,

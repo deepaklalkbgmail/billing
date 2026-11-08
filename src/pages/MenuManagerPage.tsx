@@ -124,31 +124,11 @@ export function MenuManagerPage() {
       const itemData = itemRes.data?.data || itemRes.data || [];
       const bData = branchRes.data?.data || branchRes.data || [];
 
-      // Fallback defaults if empty
-      const defaultCats: Category[] = catData.length > 0 ? catData : [
-        { id: 'cat-1', name: 'Starters', sortOrder: 1 },
-        { id: 'cat-2', name: 'Main Course', sortOrder: 2 },
-        { id: 'cat-3', name: 'Breads', sortOrder: 3 },
-        { id: 'cat-4', name: 'Rice & Biryani', sortOrder: 4 },
-        { id: 'cat-5', name: 'Beverages', sortOrder: 5 },
-        { id: 'cat-6', name: 'Desserts', sortOrder: 6 },
-      ];
+      const defaultCats: Category[] = catData;
 
-      const defaultItems: MenuItem[] = itemData.length > 0 ? itemData : [
-        { id: 'item-101', name: 'Paneer Butter Masala', shortCode: '101', categoryId: 'cat-2', basePrice: 28000, gstRate: 5, isVeg: true, isAvailable: true, trackInventory: true, sortOrder: 1 },
-        { id: 'item-102', name: 'Butter Chicken', shortCode: '102', categoryId: 'cat-2', basePrice: 34000, gstRate: 5, isVeg: false, isAvailable: true, trackInventory: true, sortOrder: 2 },
-        { id: 'item-103', name: 'Butter Naan', shortCode: '103', categoryId: 'cat-3', basePrice: 4500, gstRate: 5, isVeg: true, isAvailable: true, trackInventory: false, sortOrder: 3 },
-        { id: 'item-104', name: 'Garlic Naan', shortCode: '104', categoryId: 'cat-3', basePrice: 6000, gstRate: 5, isVeg: true, isAvailable: true, trackInventory: false, sortOrder: 4 },
-        { id: 'item-105', name: 'Chicken Biryani', shortCode: '105', categoryId: 'cat-4', basePrice: 26000, gstRate: 5, isVeg: false, isAvailable: true, trackInventory: true, sortOrder: 5 },
-        { id: 'item-106', name: 'Crispy Corn Salt & Pepper', shortCode: '107', categoryId: 'cat-1', basePrice: 19000, gstRate: 5, isVeg: true, isAvailable: true, trackInventory: true, sortOrder: 6 },
-      ];
+      const defaultItems: MenuItem[] = itemData;
 
-      const defaultBranches: Branch[] = bData.length > 0 ? bData : [
-        { id: 'b1', name: 'Downtown Main Branch', code: 'B1' },
-        { id: 'b2', name: 'Express Food Court', code: 'B2' },
-        { id: 'b3', name: 'Westside Bistro', code: 'B3' },
-        { id: 'b4', name: 'Cloud Kitchen Hub', code: 'B4' },
-      ];
+      const defaultBranches: Branch[] = bData;
 
       setCategories(defaultCats);
       setMenuItems(defaultItems);
@@ -198,7 +178,7 @@ export function MenuManagerPage() {
         await menuAPI.updateCategory(editingCategory.id, {
           name: categoryName.trim(),
           sortOrder: categorySortOrder,
-        }).catch(() => {});
+        });
 
         setCategories((prev) =>
           prev.map((c) =>
@@ -212,13 +192,9 @@ export function MenuManagerPage() {
         const res = await menuAPI.createCategory({
           name: categoryName.trim(),
           sortOrder: categorySortOrder,
-        }).catch(() => null);
+        });
 
-        const newCat = res?.data?.data || {
-          id: `cat-${Date.now()}`,
-          name: categoryName.trim(),
-          sortOrder: categorySortOrder,
-        };
+        const newCat = res.data.data;
         setCategories((prev) => [...prev, newCat]);
         toast.success('Category created successfully');
       }
@@ -231,7 +207,7 @@ export function MenuManagerPage() {
   const handleDeleteCategory = async (id: string, name: string) => {
     if (!confirm(`Are you sure you want to delete category "${name}"?`)) return;
     try {
-      await menuAPI.deleteCategory(id).catch(() => {});
+      await menuAPI.deleteCategory(id);
       setCategories((prev) => prev.filter((c) => c.id !== id));
       if (selectedCategoryId === id) setSelectedCategoryId('all');
       toast.success('Category deleted');
@@ -294,17 +270,14 @@ export function MenuManagerPage() {
 
     try {
       if (editingItem) {
-        await menuAPI.updateItem(editingItem.id, itemData).catch(() => {});
+        await menuAPI.updateItem(editingItem.id, itemData);
         setMenuItems((prev) =>
           prev.map((i) => (i.id === editingItem.id ? { ...i, ...itemData } : i))
         );
         toast.success('Menu item updated');
       } else {
-        const res = await menuAPI.createItem(itemData).catch(() => null);
-        const created = res?.data?.data || {
-          id: `item-${Date.now()}`,
-          ...itemData,
-        };
+        const res = await menuAPI.createItem(itemData);
+        const created = res.data.data;
         setMenuItems((prev) => [...prev, created]);
         toast.success('Menu item created');
       }
@@ -317,7 +290,7 @@ export function MenuManagerPage() {
   const handleDeleteItem = async (id: string, name: string) => {
     if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
     try {
-      await menuAPI.deleteItem(id).catch(() => {});
+      await menuAPI.deleteItem(id);
       setMenuItems((prev) => prev.filter((i) => i.id !== id));
       toast.success('Item deleted');
     } catch (err) {
@@ -346,7 +319,7 @@ export function MenuManagerPage() {
           menuItemId: pricingItem.id,
           price: Math.round(val * 100),
           isAvailable: true,
-        }).catch(() => {});
+        });
       }
       toast.success(`Branch pricing updated for ${pricingItem.name}`);
       setBranchPriceDialogOpen(false);

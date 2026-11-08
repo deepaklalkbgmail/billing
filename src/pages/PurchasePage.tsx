@@ -135,28 +135,13 @@ export function PurchasePage() {
       const supData = supRes.data?.data || supRes.data || [];
       const invData = invRes.data?.data || invRes.data || [];
 
-      // Fallback sample suppliers
-      const defaultSuppliers: Supplier[] = supData.length > 0 ? supData : [
-        { id: 'sup-1', name: 'Krishna Agro & Grains', phone: '9876543210', address: 'APMC Market Yard', gstin: '27AAAAA0000A1Z5' },
-        { id: 'sup-2', name: 'Amul Dairy Distributor', phone: '9822334455', address: 'Industrial Area Phase 2', gstin: '27BBBBB1111B1Z2' },
-        { id: 'sup-3', name: 'Metro Fresh Poultry', phone: '9811223344', address: 'Central Wholesale Mandi', gstin: '27CCCCC2222C1Z8' },
-      ];
+      const defaultSuppliers: Supplier[] = supData;
 
-      // Fallback sample purchases
-      const defaultPurchases: Purchase[] = purData.length > 0 ? purData : [
-        { id: 'pur-1', branchId: 'b1', supplierId: 'sup-1', invoiceNumber: 'INV-2024-890', invoiceDate: new Date().toISOString(), totalAmount: 4850000, paidAmount: 4850000, paymentStatus: 'PAID', paymentMode: 'BANK_TRANSFER', notes: 'Monthly Rice & Dal intake', supplier: defaultSuppliers[0], items: [{ inventoryItemId: 'inv-1', quantity: 50, unitPrice: 9700, total: 4850000 }] },
-        { id: 'pur-2', branchId: 'b1', supplierId: 'sup-2', invoiceNumber: 'AMUL-4402', invoiceDate: new Date(Date.now() - 86400000).toISOString(), totalAmount: 2600000, paidAmount: 2600000, paymentStatus: 'PAID', paymentMode: 'UPI', notes: 'Butter & Cream batch', supplier: defaultSuppliers[1], items: [{ inventoryItemId: 'inv-4', quantity: 5, unitPrice: 52000, total: 2600000 }] },
-        { id: 'pur-3', branchId: 'b1', supplierId: 'sup-3', invoiceNumber: 'MFP-109', invoiceDate: new Date(Date.now() - 172800000).toISOString(), totalAmount: 7200000, paidAmount: 4000000, paymentStatus: 'PARTIAL', paymentMode: 'CASH', notes: 'Fresh Chicken Delivery', supplier: defaultSuppliers[2], items: [{ inventoryItemId: 'inv-3', quantity: 30, unitPrice: 24000, total: 7200000 }] },
-      ];
+      const defaultPurchases: Purchase[] = purData;
 
       setSuppliers(defaultSuppliers);
       setPurchases(defaultPurchases);
-      setInventoryItems(invData.length > 0 ? invData : [
-        { id: 'inv-1', name: 'Basmati Rice (Raw)', unit: 'kg', costPerUnit: 9500 },
-        { id: 'inv-2', name: 'Fresh Paneer Block', unit: 'kg', costPerUnit: 34000 },
-        { id: 'inv-3', name: 'Chicken Breast (Cleaned)', unit: 'kg', costPerUnit: 24000 },
-        { id: 'inv-4', name: 'Cooking Butter (Amul)', unit: 'kg', costPerUnit: 52000 },
-      ]);
+      setInventoryItems(invData);
     } catch (err) {
       console.error('Failed to load purchase data:', err);
     } finally {
@@ -235,7 +220,7 @@ export function PurchasePage() {
     }
 
     const payload = {
-      branchId: activeBranchId || user?.branchId || 'b1',
+      branchId: (activeBranchId || user?.branchId) as string,
       supplierId: selectedSupplierId || null,
       invoiceNumber: invoiceNumber.trim(),
       invoiceDate: new Date(invoiceDate).toISOString(),
@@ -248,12 +233,8 @@ export function PurchasePage() {
     };
 
     try {
-      const res = await inventoryAPI.createPurchase(payload).catch(() => null);
-      const created = res?.data?.data || {
-        id: `pur-${Date.now()}`,
-        ...payload,
-        supplier: suppliers.find((s) => s.id === selectedSupplierId),
-      };
+      const res = await inventoryAPI.createPurchase(payload);
+      const created = res.data.data;
       setPurchases((prev) => [created, ...prev]);
       toast.success('Purchase recorded and stock balances updated!');
       setPurchaseDialogOpen(false);
@@ -295,17 +276,14 @@ export function PurchasePage() {
 
     try {
       if (editingSupplier) {
-        await inventoryAPI.updateSupplier(editingSupplier.id, payload).catch(() => {});
+        await inventoryAPI.updateSupplier(editingSupplier.id, payload);
         setSuppliers((prev) =>
           prev.map((s) => (s.id === editingSupplier.id ? { ...s, ...payload } : s))
         );
         toast.success('Supplier details updated');
       } else {
-        const res = await inventoryAPI.createSupplier(payload).catch(() => null);
-        const newSup = res?.data?.data || {
-          id: `sup-${Date.now()}`,
-          ...payload,
-        };
+        const res = await inventoryAPI.createSupplier(payload);
+        const newSup = res.data.data;
         setSuppliers((prev) => [...prev, newSup]);
         toast.success('Supplier registered successfully');
       }
@@ -331,7 +309,7 @@ export function PurchasePage() {
       await inventoryAPI.updatePurchasePayment(selectedPurchase.id, {
         paidAmount: paidPaise,
         paymentStatus: updatePaymentStatus,
-      }).catch(() => {});
+      });
 
       setPurchases((prev) =>
         prev.map((p) =>

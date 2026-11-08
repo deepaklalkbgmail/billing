@@ -158,40 +158,6 @@ export function LoginPage() {
               </Button>
             </form>
 
-            <div className="mt-6 pt-4 border-t border-slate-800">
-              <p className="text-xs text-center text-slate-400 mb-2 font-medium">
-                Quick Login Demo Accounts:
-              </p>
-              <div className="grid grid-cols-3 gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="text-xs border-slate-700 bg-slate-800/60 hover:bg-slate-700 text-slate-200"
-                  onClick={() => handleDemoFill('admin', 'admin123')}
-                >
-                  Super Admin
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="text-xs border-slate-700 bg-slate-800/60 hover:bg-slate-700 text-slate-200"
-                  onClick={() => handleDemoFill('manager1', 'manager123')}
-                >
-                  Manager
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="text-xs border-slate-700 bg-slate-800/60 hover:bg-slate-700 text-slate-200"
-                  onClick={() => handleDemoFill('cashier1', 'cashier123')}
-                >
-                  Cashier
-                </Button>
-              </div>
-            </div>
           </CardContent>
 
           <CardFooter className="justify-center border-t border-slate-800/80 py-3 text-xs text-slate-500">

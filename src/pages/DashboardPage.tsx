@@ -48,88 +48,101 @@ export function DashboardPage() {
   const [dateRange, setDateRange] = useState<'today' | 'week' | 'month'>('today');
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Summary Metrics
+  // Summary Metrics (paise) - start empty; filled from the API only
   const [metrics, setMetrics] = useState({
-    todaySales: 4280000, // in paise
-    todayBills: 56,
-    todayExpenses: 750000, // in paise
-    netCollection: 3530000, // in paise
+    todaySales: 0,
+    todayBills: 0,
+    todayExpenses: 0,
+    netCollection: 0,
   });
 
   // Last 7 days chart data
-  const [salesTrend, setSalesTrend] = useState<any[]>([
-    { day: 'Mon', sales: 28500, bills: 34 },
-    { day: 'Tue', sales: 34200, bills: 42 },
-    { day: 'Wed', sales: 31000, bills: 38 },
-    { day: 'Thu', sales: 41500, bills: 48 },
-    { day: 'Fri', sales: 52000, bills: 65 },
-    { day: 'Sat', sales: 68400, bills: 82 },
-    { day: 'Sun', sales: 74200, bills: 91 },
-  ]);
+  const [salesTrend, setSalesTrend] = useState<any[]>([]);
 
   // Top 5 selling items
-  const [topItems, setTopItems] = useState<any[]>([
-    { name: 'Butter Chicken', category: 'Main Course', quantity: 84, revenue: 2856000 },
-    { name: 'Paneer Butter Masala', category: 'Main Course', quantity: 72, revenue: 2016000 },
-    { name: 'Chicken Biryani', category: 'Rice', quantity: 65, revenue: 1690000 },
-    { name: 'Butter Naan', category: 'Breads', quantity: 180, revenue: 810000 },
-    { name: 'Crispy Corn Salt & Pepper', category: 'Starters', quantity: 48, revenue: 912000 },
-  ]);
+  const [topItems, setTopItems] = useState<any[]>([]);
 
   // Branch comparison table
-  const [branchData, setBranchData] = useState<any[]>([
-    { code: 'B1', name: 'Downtown Main Branch', sales: 4280000, bills: 56, expenses: 750000, net: 3530000, status: 'Active' },
-    { code: 'B2', name: 'Express Food Court', sales: 2940000, bills: 78, expenses: 420000, net: 2520000, status: 'Active' },
-    { code: 'B3', name: 'Westside Bistro', sales: 3860000, bills: 46, expenses: 610000, net: 3250000, status: 'Active' },
-    { code: 'B4', name: 'Cloud Kitchen Hub', sales: 2150000, bills: 62, expenses: 310000, net: 1840000, status: 'Active' },
-  ]);
+  const [branchData, setBranchData] = useState<any[]>([]);
 
   useEffect(() => {
     fetchDashboardData();
   }, [dateRange, activeBranchId]);
 
+  const ymd = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      const todayStr = new Date().toISOString().split('T')[0];
-      const [summaryRes, topRes, compRes] = await Promise.all([
-        reportsAPI.getDailySummary(activeBranchId || 'b1', todayStr).catch(() => null),
-        reportsAPI.getTopSellingItems({
-          branchId: activeBranchId || undefined,
-          startDate: todayStr,
-          endDate: todayStr,
-          limit: 5,
-        }).catch(() => null),
+      const now = new Date();
+      const endStr = ymd(now);
+      const start = new Date(now);
+      if (dateRange === 'week') start.setDate(start.getDate() - 6);
+      if (dateRange === 'month') start.setDate(1);
+      const startStr = ymd(start);
+      const branchId = activeBranchId || undefined;
+
+      const trendStart = new Date(now);
+      trendStart.setDate(trendStart.getDate() - 6);
+
+      const [salesRes, expRes, topRes, trendRes, compRes] = await Promise.all([
+        reportsAPI.getSalesReport({ branchId, startDate: startStr, endDate: endStr, groupBy: 'day' }),
+        reportsAPI.getExpenseReport({ branchId, startDate: startStr, endDate: endStr }),
+        reportsAPI.getTopSellingItems({ branchId, startDate: startStr, endDate: endStr, limit: 5 }),
+        reportsAPI.getSalesReport({ branchId, startDate: ymd(trendStart), endDate: endStr, groupBy: 'day' }),
         user?.role === 'SUPER_ADMIN'
-          ? reportsAPI.getBranchComparison({ startDate: todayStr, endDate: todayStr }).catch(() => null)
+          ? reportsAPI.getBranchComparison({ startDate: startStr, endDate: endStr })
           : Promise.resolve(null),
       ]);
 
-      if (summaryRes?.data?.data || summaryRes?.data) {
-        const sum = summaryRes.data?.data || summaryRes.data;
-        setMetrics({
-          todaySales: sum.totalSales || metrics.todaySales,
-          todayBills: sum.totalBills || metrics.todayBills,
-          todayExpenses: sum.totalExpenses || metrics.todayExpenses,
-          netCollection: (sum.totalSales || metrics.todaySales) - (sum.totalExpenses || metrics.todayExpenses),
+      const salesRows: any[] = salesRes.data?.data || [];
+      const totalSales = salesRows.reduce((a, r) => a + (r.totalSales || 0), 0);
+      const totalBills = salesRows.reduce((a, r) => a + (r.totalBills || 0), 0);
+      const totalExpenses = expRes.data?.data?.grandTotal || 0;
+      setMetrics({
+        todaySales: totalSales,
+        todayBills: totalBills,
+        todayExpenses: totalExpenses,
+        netCollection: totalSales - totalExpenses,
+      });
+
+      setTopItems(topRes.data?.data || []);
+
+      // Build a complete 7-day series (missing days = 0)
+      const byDay = new Map<string, any>(
+        (trendRes.data?.data || []).map((r: any) => [r.period, r])
+      );
+      const series: any[] = [];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(trendStart);
+        d.setDate(trendStart.getDate() + i);
+        const row = byDay.get(ymd(d));
+        series.push({
+          day: d.toLocaleDateString('en-US', { weekday: 'short' }),
+          sales: Math.round((row?.totalSales || 0) / 100),
+          bills: row?.totalBills || 0,
         });
       }
+      setSalesTrend(series);
 
-      if (topRes?.data?.data || topRes?.data) {
-        const items = topRes.data?.data || topRes.data;
-        if (Array.isArray(items) && items.length > 0) {
-          setTopItems(items);
-        }
-      }
-
-      if (compRes?.data?.data || compRes?.data) {
-        const comp = compRes.data?.data || compRes.data;
-        if (Array.isArray(comp) && comp.length > 0) {
-          setBranchData(comp);
-        }
-      }
+      const comp = compRes?.data?.data;
+      setBranchData(
+        Array.isArray(comp)
+          ? comp.map((c: any) => ({
+              code: c.branchCode,
+              name: c.branchName,
+              sales: c.totalSales,
+              bills: c.totalBills,
+              expenses: c.totalExpenses,
+              net: c.netProfit,
+              status: 'Active',
+            }))
+          : []
+      );
     } catch (err) {
       console.error('Dashboard data load error:', err);
+      toast.error('Failed to load dashboard data');
     } finally {
       setLoading(false);
     }
@@ -194,9 +207,8 @@ export function DashboardPage() {
                 {formatCurrency(metrics.todaySales)}
               </div>
             )}
-            <p className="text-xs text-green-600 dark:text-green-400 font-medium flex items-center gap-1 mt-1">
-              <TrendingUp className="h-3.5 w-3.5" />
-              <span>+14.2% vs previous period</span>
+            <p className="text-xs text-muted-foreground mt-1">
+              {dateRange === 'today' ? 'Today' : dateRange === 'week' ? 'Last 7 days' : 'This month'}
             </p>
           </CardContent>
         </Card>
@@ -291,6 +303,8 @@ export function DashboardPage() {
                   <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                   <XAxis dataKey="day" tickLine={false} axisLine={false} fontSize={12} />
                   <YAxis
+                    domain={[0, (max: number) => Math.max(max, 1000)]}
+                    allowDecimals={false}
                     tickLine={false}
                     axisLine={false}
                     fontSize={12}
@@ -351,11 +365,11 @@ export function DashboardPage() {
                 <span>Branch Performance Matrix</span>
               </CardTitle>
               <CardDescription className="text-xs">
-                Real-time performance comparison across all 4 outlets
+                Real-time performance comparison across all outlets
               </CardDescription>
             </div>
             <Badge variant="outline" className="text-xs">
-              4 Outlets Live
+              {branchData.length} Outlets
             </Badge>
           </CardHeader>
           <CardContent>

@@ -69,21 +69,21 @@ export function ReportsPage() {
   // Data states
   const [salesData, setSalesData] = useState<any[]>([]);
   const [gstData, setGstData] = useState<any>({
-    gstBillsCount: 312,
-    nonGstBillsCount: 145,
-    taxableAmount: 18400000,
-    cgstTotal: 460000,
-    sgstTotal: 460000,
-    totalGst: 920000,
+    gstBillsCount: 0,
+    nonGstBillsCount: 0,
+    taxableAmount: 0,
+    cgstTotal: 0,
+    sgstTotal: 0,
+    totalGst: 0,
     bills: [],
   });
   const [expenseData, setExpenseData] = useState<any[]>([]);
   const [pnlData, setPnlData] = useState<any>({
-    revenue: 24500000,
-    purchases: 8900000,
-    expenses: 4200000,
-    netProfit: 11400000,
-    marginPercent: 46.5,
+    revenue: 0,
+    purchases: 0,
+    expenses: 0,
+    netProfit: 0,
+    marginPercent: 0,
   });
   const [topItemsData, setTopItemsData] = useState<any[]>([]);
 
@@ -100,94 +100,69 @@ export function ReportsPage() {
           startDate,
           endDate,
           groupBy,
-        }).catch(() => null);
-
-        const data = res?.data?.data || res?.data;
-        if (Array.isArray(data) && data.length > 0) {
-          setSalesData(data);
-        } else {
-          // Fallback sample sales data
-          setSalesData([
-            { period: '01 Nov', revenue: 34000, bills: 42 },
-            { period: '02 Nov', revenue: 42500, bills: 51 },
-            { period: '03 Nov', revenue: 38900, bills: 46 },
-            { period: '04 Nov', revenue: 49200, bills: 58 },
-            { period: '05 Nov', revenue: 56100, bills: 69 },
-            { period: '06 Nov', revenue: 68400, bills: 83 },
-            { period: '07 Nov', revenue: 74200, bills: 92 },
-          ]);
-        }
+        });
+        const data = res?.data?.data || [];
+        setSalesData(
+          (Array.isArray(data) ? data : []).map((r: any) => ({
+            period: r.period,
+            revenue: (r.totalSales ?? 0) / 100, // paise -> rupees (chart/table scale back to paise)
+            bills: r.totalBills ?? 0,
+          }))
+        );
       } else if (activeTab === 'gst') {
         const res = await reportsAPI.getGstReport({
           branchId: activeBranchId || undefined,
           startDate,
           endDate,
-        }).catch(() => null);
-
-        const data = res?.data?.data || res?.data;
-        if (data) {
-          setGstData({
-            ...gstData,
-            ...data,
-          });
-        }
+        });
+        const d = res?.data?.data;
+        const sm = d?.summary || {};
+        setGstData({
+          gstBillsCount: sm.totalBills ?? 0,
+          nonGstBillsCount: 0,
+          taxableAmount: sm.totalTaxableValue ?? 0,
+          cgstTotal: sm.totalCgst ?? 0,
+          sgstTotal: sm.totalSgst ?? 0,
+          totalGst: sm.totalTax ?? 0,
+          bills: d?.bills || [],
+        });
       } else if (activeTab === 'expenses') {
         const res = await reportsAPI.getExpenseReport({
           branchId: activeBranchId || undefined,
           startDate,
           endDate,
-        }).catch(() => null);
-
-        const data = res?.data?.data || res?.data;
-        if (Array.isArray(data) && data.length > 0) {
-          setExpenseData(data);
-        } else {
-          // Fallback sample expense data
-          setExpenseData([
-            { category: 'Vegetables & Produce', amount: 1240000, count: 24 },
-            { category: 'Dairy & Poultry', amount: 1850000, count: 18 },
-            { category: 'Utilities & Fuel', amount: 840000, count: 8 },
-            { category: 'Packaging Materials', amount: 450000, count: 12 },
-            { category: 'Staff Welfare', amount: 320000, count: 15 },
-          ]);
-        }
+        });
+        const cats = res?.data?.data?.categories || [];
+        setExpenseData(
+          cats.map((c: any) => ({ category: c.category, amount: c.total ?? 0, count: c.count ?? 0 }))
+        );
       } else if (activeTab === 'pnl') {
         const res = await reportsAPI.getProfitLoss({
           branchId: activeBranchId || undefined,
           startDate,
           endDate,
-        }).catch(() => null);
-
-        const data = res?.data?.data || res?.data;
-        if (data) {
-          setPnlData(data);
-        }
+        });
+        const d = res?.data?.data;
+        setPnlData({
+          revenue: d?.revenue ?? 0,
+          purchases: d?.cogs ?? 0,
+          expenses: d?.operatingExpenses ?? 0,
+          netProfit: d?.netProfit ?? 0,
+          marginPercent: d?.profitMarginPercent ?? 0,
+        });
       } else if (activeTab === 'items') {
         const res = await reportsAPI.getTopSellingItems({
           branchId: activeBranchId || undefined,
           startDate,
           endDate,
           limit: 15,
-        }).catch(() => null);
-
-        const data = res?.data?.data || res?.data;
-        if (Array.isArray(data) && data.length > 0) {
-          setTopItemsData(data);
-        } else {
-          // Fallback sample items
-          setTopItemsData([
-            { name: 'Butter Chicken', category: 'Main Course', quantity: 184, revenue: 6256000 },
-            { name: 'Paneer Butter Masala', category: 'Main Course', quantity: 152, revenue: 4256000 },
-            { name: 'Chicken Biryani', category: 'Rice', quantity: 142, revenue: 3692000 },
-            { name: 'Butter Naan', category: 'Breads', quantity: 420, revenue: 1890000 },
-            { name: 'Crispy Corn Salt & Pepper', category: 'Starters', quantity: 98, revenue: 1862000 },
-            { name: 'Dal Makhani', category: 'Main Course', quantity: 88, revenue: 1936000 },
-            { name: 'Gulab Jamun (2 pcs)', category: 'Desserts', quantity: 74, revenue: 666000 },
-          ]);
-        }
+        });
+        const data = res?.data?.data || [];
+        setTopItemsData(Array.isArray(data) ? data : []);
       }
     } catch (err) {
       console.error('Reports error:', err);
+      toast.error('Failed to load report');
     } finally {
       setLoading(false);
     }

@@ -136,24 +136,9 @@ export function InventoryPage() {
       const invData = invRes.data?.data || invRes.data || [];
       const mData = menuRes.data?.data || menuRes.data || [];
 
-      // Fallback sample stock items if empty
-      const defaultItems: InventoryItem[] = invData.length > 0 ? invData : [
-        { id: 'inv-1', name: 'Basmati Rice (Raw)', unit: 'kg', currentStock: 45.5, minStock: 20, costPerUnit: 9500, branchId: 'b1', trackingMode: 'recipe', isActive: true },
-        { id: 'inv-2', name: 'Fresh Paneer Block', unit: 'kg', currentStock: 4.2, minStock: 10, costPerUnit: 34000, branchId: 'b1', trackingMode: 'recipe', isActive: true },
-        { id: 'inv-3', name: 'Chicken Breast (Cleaned)', unit: 'kg', currentStock: 8.0, minStock: 15, costPerUnit: 24000, branchId: 'b1', trackingMode: 'recipe', isActive: true },
-        { id: 'inv-4', name: 'Cooking Butter (Amul)', unit: 'kg', currentStock: 12.0, minStock: 8, costPerUnit: 52000, branchId: 'b1', trackingMode: 'recipe', isActive: true },
-        { id: 'inv-5', name: 'Maida Flour', unit: 'kg', currentStock: 3.5, minStock: 15, costPerUnit: 4200, branchId: 'b1', trackingMode: 'recipe', isActive: true },
-        { id: 'inv-6', name: 'Cooking Gas Cylinder (19kg)', unit: 'cylinder', currentStock: 3.0, minStock: 2, costPerUnit: 185000, branchId: 'b1', trackingMode: 'direct', isActive: true },
-        { id: 'inv-7', name: 'Heavy Dairy Cream', unit: 'litre', currentStock: 2.0, minStock: 5, costPerUnit: 21000, branchId: 'b1', trackingMode: 'recipe', isActive: true },
-        { id: 'inv-8', name: 'Sweet Corn Kernels', unit: 'kg', currentStock: 18.0, minStock: 5, costPerUnit: 12000, branchId: 'b1', trackingMode: 'recipe', isActive: true },
-      ];
+      const defaultItems: InventoryItem[] = invData;
 
-      const defaultMenus: MenuItem[] = mData.length > 0 ? mData : [
-        { id: 'item-101', name: 'Paneer Butter Masala', shortCode: '101' },
-        { id: 'item-102', name: 'Butter Chicken', shortCode: '102' },
-        { id: 'item-103', name: 'Butter Naan', shortCode: '103' },
-        { id: 'item-105', name: 'Chicken Biryani', shortCode: '105' },
-      ];
+      const defaultMenus: MenuItem[] = mData;
 
       setItems(defaultItems);
       setMenuItems(defaultMenus);
@@ -209,24 +194,20 @@ export function InventoryPage() {
       currentStock: parseFloat(itemCurrentStock) || 0,
       minStock: parseFloat(itemMinStock) || 0,
       costPerUnit: Math.round((parseFloat(itemCostPerUnit) || 0) * 100),
-      branchId: activeBranchId || user?.branchId || 'b1',
+      branchId: (activeBranchId || user?.branchId) as string,
       trackingMode: 'recipe',
     };
 
     try {
       if (editingItem) {
-        await inventoryAPI.updateItem(editingItem.id, payload).catch(() => {});
+        await inventoryAPI.updateItem(editingItem.id, payload);
         setItems((prev) =>
           prev.map((i) => (i.id === editingItem.id ? { ...i, ...payload } : i))
         );
         toast.success('Stock item updated');
       } else {
-        const res = await inventoryAPI.createItem(payload).catch(() => null);
-        const newItem = res?.data?.data || {
-          id: `inv-${Date.now()}`,
-          ...payload,
-          isActive: true,
-        };
+        const res = await inventoryAPI.createItem(payload);
+        const newItem = res.data.data;
         setItems((prev) => [...prev, newItem]);
         toast.success('Stock item created');
       }
@@ -258,7 +239,7 @@ export function InventoryPage() {
         quantity: qty,
         type: adjustType,
         reference: adjustNotes,
-      }).catch(() => {});
+      });
 
       const newBalance = adjustItem.currentStock + qty;
       setItems((prev) =>
@@ -282,16 +263,7 @@ export function InventoryPage() {
     try {
       const res = await inventoryAPI.getStockLogs(item.id).catch(() => ({ data: [] }));
       const logs = res.data?.data || res.data || [];
-      if (logs.length > 0) {
-        setStockLogs(logs);
-      } else {
-        // Fallback sample logs
-        setStockLogs([
-          { id: '1', type: 'PURCHASE', quantity: 20, balanceAfter: item.currentStock, reference: 'Inv #PUR-904', createdAt: new Date(Date.now() - 86400000).toISOString() },
-          { id: '2', type: 'SALE_DEDUCT', quantity: -2.5, balanceAfter: item.currentStock - 2.5, reference: 'POS Auto Bill #B1-0021', createdAt: new Date(Date.now() - 43200000).toISOString() },
-          { id: '3', type: 'WASTAGE', quantity: -0.5, balanceAfter: item.currentStock - 3.0, reference: 'Spoilage discard', createdAt: new Date(Date.now() - 14400000).toISOString() },
-        ]);
-      }
+      setStockLogs(logs);
     } catch (err) {
       setStockLogs([]);
     } finally {
@@ -311,16 +283,7 @@ export function InventoryPage() {
     try {
       const res = await inventoryAPI.getRecipe(menuItemId).catch(() => ({ data: [] }));
       const rec = res.data?.data || res.data || [];
-      if (rec.length > 0) {
-        setCurrentRecipe(rec);
-      } else {
-        // Demo ingredients for preview
-        setCurrentRecipe([
-          { inventoryItemId: items[1]?.id || 'inv-2', quantityUsed: 0.25 },
-          { inventoryItemId: items[3]?.id || 'inv-4', quantityUsed: 0.05 },
-          { inventoryItemId: items[6]?.id || 'inv-7', quantityUsed: 0.05 },
-        ]);
-      }
+      setCurrentRecipe(rec);
     } catch (err) {
       setCurrentRecipe([]);
     } finally {
@@ -346,7 +309,7 @@ export function InventoryPage() {
   const handleSaveRecipe = async () => {
     if (!selectedMenuItemId) return;
     try {
-      await inventoryAPI.setRecipe(selectedMenuItemId, currentRecipe).catch(() => {});
+      await inventoryAPI.setRecipe(selectedMenuItemId, currentRecipe);
       toast.success('Dish recipe bill of materials (BOM) saved!');
     } catch (err) {
       toast.error('Failed to save recipe');

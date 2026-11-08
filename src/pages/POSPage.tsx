@@ -173,38 +173,11 @@ export function POSPage() {
       const itemData = itemRes.data?.data || itemRes.data || [];
       const tblData = tableRes.data?.data || tableRes.data || [];
 
-      // Fallback sample items if empty DB
-      const defaultCats: CategoryData[] = catData.length > 0 ? catData : [
-        { id: 'cat-1', name: 'Starters', sortOrder: 1 },
-        { id: 'cat-2', name: 'Main Course', sortOrder: 2 },
-        { id: 'cat-3', name: 'Breads', sortOrder: 3 },
-        { id: 'cat-4', name: 'Rice & Biryani', sortOrder: 4 },
-        { id: 'cat-5', name: 'Beverages', sortOrder: 5 },
-        { id: 'cat-6', name: 'Desserts', sortOrder: 6 },
-      ];
+      const defaultCats: CategoryData[] = catData;
 
-      const defaultItems: MenuItemData[] = itemData.length > 0 ? itemData : [
-        { id: 'item-101', name: 'Paneer Butter Masala', shortCode: '101', categoryId: 'cat-2', basePrice: 28000, gstRate: 5, isVeg: true, isAvailable: true },
-        { id: 'item-102', name: 'Butter Chicken', shortCode: '102', categoryId: 'cat-2', basePrice: 34000, gstRate: 5, isVeg: false, isAvailable: true },
-        { id: 'item-103', name: 'Butter Naan', shortCode: '103', categoryId: 'cat-3', basePrice: 4500, gstRate: 5, isVeg: true, isAvailable: true },
-        { id: 'item-104', name: 'Garlic Naan', shortCode: '104', categoryId: 'cat-3', basePrice: 6000, gstRate: 5, isVeg: true, isAvailable: true },
-        { id: 'item-105', name: 'Chicken Biryani', shortCode: '105', categoryId: 'cat-4', basePrice: 26000, gstRate: 5, isVeg: false, isAvailable: true },
-        { id: 'item-106', name: 'Veg Dum Biryani', shortCode: '106', categoryId: 'cat-4', basePrice: 21000, gstRate: 5, isVeg: true, isAvailable: true },
-        { id: 'item-107', name: 'Crispy Corn Salt & Pepper', shortCode: '107', categoryId: 'cat-1', basePrice: 19000, gstRate: 5, isVeg: true, isAvailable: true },
-        { id: 'item-108', name: 'Chicken Tikka', shortCode: '108', categoryId: 'cat-1', basePrice: 29000, gstRate: 5, isVeg: false, isAvailable: true },
-        { id: 'item-109', name: 'Dal Makhani', shortCode: '109', categoryId: 'cat-2', basePrice: 22000, gstRate: 5, isVeg: true, isAvailable: true },
-        { id: 'item-110', name: 'Gulab Jamun (2 pcs)', shortCode: '110', categoryId: 'cat-6', basePrice: 9000, gstRate: 5, isVeg: true, isAvailable: true },
-        { id: 'item-111', name: 'Fresh Lime Soda', shortCode: '111', categoryId: 'cat-5', basePrice: 7000, gstRate: 5, isVeg: true, isAvailable: true },
-        { id: 'item-112', name: 'Cold Coffee', shortCode: '112', categoryId: 'cat-5', basePrice: 12000, gstRate: 5, isVeg: true, isAvailable: true },
-      ];
+      const defaultItems: MenuItemData[] = itemData;
 
-      const defaultTables: TableData[] = tblData.length > 0 ? tblData : [
-        { id: 'tbl-1', number: 1, name: 'Table 1', capacity: 4 },
-        { id: 'tbl-2', number: 2, name: 'Table 2', capacity: 2 },
-        { id: 'tbl-3', number: 3, name: 'Table 3', capacity: 6 },
-        { id: 'tbl-4', number: 4, name: 'Table 4', capacity: 4 },
-        { id: 'tbl-5', number: 5, name: 'VIP Booth', capacity: 8 },
-      ];
+      const defaultTables: TableData[] = tblData;
 
       setCategories(defaultCats);
       setMenuItems(defaultItems);
@@ -409,10 +382,10 @@ export function POSPage() {
           amount: p.amount,
           reference: p.reference,
         }))
-      ).catch(() => {});
+      );
 
       if (withPrintReceipt) {
-        await billingAPI.printReceipt(billId!).catch(() => {});
+        await billingAPI.printReceipt(billId!);
       }
 
       toast.success('Bill successfully settled and closed!');
@@ -466,7 +439,7 @@ export function POSPage() {
       const billData = res.data?.data || res.data;
       const bId = billData?.id || `bill-${Date.now()}`;
 
-      await billingAPI.printReceipt(bId).catch(() => {});
+      await billingAPI.printReceipt(bId);
       toast.success('Bill saved and receipt sent to printer!');
       clearBill();
     } catch (err: any) {
@@ -485,7 +458,7 @@ export function POSPage() {
 
     try {
       if (heldBillId) {
-        await billingAPI.printKOT(heldBillId, unprintedItems.map((i) => i.id)).catch(() => {});
+        await billingAPI.printKOT(heldBillId, unprintedItems.map((i) => i.id));
       }
       markKotPrinted(unprintedItems.map((i) => i.id));
       toast.success(`KOT sent to kitchen for ${unprintedItems.length} items!`);
@@ -522,7 +495,7 @@ export function POSPage() {
         netTotal,
       };
 
-      await billingAPI.createBill(billPayload).catch(() => {});
+      await billingAPI.createBill(billPayload);
       toast.success('Bill placed on HOLD successfully');
       clearBill();
     } catch (err) {
