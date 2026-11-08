@@ -342,8 +342,12 @@ export function POSPage() {
 
     setIsSettling(true);
     try {
+      if (!activeBranchId && !user?.branchId) {
+        toast.error('Please select a branch (top bar) before billing');
+        return;
+      }
       const billPayload = {
-        branchId: activeBranchId || user?.branchId || 'b1-downtown',
+        branchId: (activeBranchId || user?.branchId) as string,
         orderType,
         tableId: orderType === 'DINE_IN' ? tableId : null,
         customerName,
@@ -411,8 +415,12 @@ export function POSPage() {
     }
 
     try {
+      if (!activeBranchId && !user?.branchId) {
+        toast.error('Please select a branch (top bar) before billing');
+        return;
+      }
       const billPayload = {
-        branchId: activeBranchId || user?.branchId || 'b1-downtown',
+        branchId: (activeBranchId || user?.branchId) as string,
         orderType,
         tableId: orderType === 'DINE_IN' ? tableId : null,
         customerName,
@@ -447,8 +455,7 @@ export function POSPage() {
       toast.success('Bill saved and receipt sent to printer!');
       clearBill();
     } catch (err: any) {
-      toast.error('Saved bill locally. Printer acknowledged.');
-      clearBill();
+      toast.error('Could not save/print the bill - nothing was saved. Please try again.');
     }
   };
 
@@ -479,8 +486,12 @@ export function POSPage() {
     }
 
     try {
+      if (!activeBranchId && !user?.branchId) {
+        toast.error('Please select a branch (top bar) before billing');
+        return;
+      }
       const billPayload = {
-        branchId: activeBranchId || user?.branchId || 'b1-downtown',
+        branchId: (activeBranchId || user?.branchId) as string,
         orderType,
         tableId: orderType === 'DINE_IN' ? tableId : null,
         customerName,
