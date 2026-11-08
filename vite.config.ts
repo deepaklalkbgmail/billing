@@ -12,6 +12,7 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    host: true, // listen on LAN so phones/tablets can open http://<PC-IP>:5173
     proxy: {
       '/api': {
         target: 'http://localhost:3456',

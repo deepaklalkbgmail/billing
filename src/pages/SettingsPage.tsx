@@ -369,7 +369,7 @@ export function SettingsPage() {
                 <Switch checked={gstEnabled} onCheckedChange={setGstEnabled} />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Label className="text-xs">GST Mode</Label>
                   <Select value={gstMode} onValueChange={setGstMode}>
@@ -457,7 +457,7 @@ export function SettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex items-center justify-between p-2.5 rounded border bg-muted/20">
                   <span className="font-medium">Print Brand Header</span>
                   <Switch checked={showLogo} onCheckedChange={setShowLogo} />

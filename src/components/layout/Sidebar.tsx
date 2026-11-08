@@ -16,8 +16,10 @@ import {
   ChevronRight,
   LogOut,
   Store,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useMediaQuery } from '@/lib/useMediaQuery';
 import {
   Tooltip,
   TooltipContent,
@@ -92,7 +94,15 @@ const navItems: NavItem[] = [
 export function Sidebar() {
   const location = useLocation();
   const { user, logout } = useAuthStore();
-  const { sidebarCollapsed, toggleSidebar } = useUIStore();
+  const { sidebarCollapsed: collapsedPref, toggleSidebar, mobileNavOpen, setMobileNavOpen } = useUIStore();
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
+  // Collapsed (icon-only) mode only applies on desktop; the mobile drawer is always full width
+  const sidebarCollapsed = collapsedPref && isDesktop;
+
+  // Close the drawer whenever the route changes
+  React.useEffect(() => {
+    setMobileNavOpen(false);
+  }, [location.pathname]);
 
   const filteredNav = navItems.filter(
     (item) => user && item.roles.includes(user.role)
@@ -100,10 +110,21 @@ export function Sidebar() {
 
   return (
     <TooltipProvider delayDuration={0}>
+      {/* Backdrop for the mobile/tablet drawer */}
+      {mobileNavOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={() => setMobileNavOpen(false)}
+          aria-hidden="true"
+        />
+      )}
       <aside
         className={cn(
           'flex flex-col border-r bg-card transition-all duration-300',
-          sidebarCollapsed ? 'w-16' : 'w-60'
+          // phones & tablets: off-canvas drawer; desktop: static column
+          'fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] lg:static lg:z-auto lg:max-w-none',
+          mobileNavOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
+          sidebarCollapsed ? 'lg:w-16' : 'lg:w-60'
         )}
       >
         {/* Logo / Brand */}
@@ -114,11 +135,21 @@ export function Sidebar() {
               <span className="text-lg font-bold text-primary">RestoPOS</span>
             </Link>
           )}
+          {/* Close button (phones/tablets) */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setMobileNavOpen(false)}
+            className="ml-auto lg:hidden"
+            aria-label="Close menu"
+          >
+            <X className="h-5 w-5" />
+          </Button>
           <Button
             variant="ghost"
             size="icon-sm"
             onClick={toggleSidebar}
-            className="ml-auto"
+            className="ml-auto hidden lg:inline-flex"
           >
             {sidebarCollapsed ? (
               <ChevronRight className="h-4 w-4" />
@@ -139,7 +170,7 @@ export function Sidebar() {
                 key={item.href}
                 to={item.href}
                 className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                  'flex items-center gap-3 rounded-lg px-3 py-3 lg:py-2.5 text-sm font-medium transition-colors',
                   isActive
                     ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',

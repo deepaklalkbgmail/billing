@@ -23,12 +23,7 @@ const PORT = process.env.PORT || 3456;
 // Enable CORS for frontend Vite dev server and electron/local origins
 app.use(
   cors({
-    origin: [
-      'http://localhost:5173',
-      'http://127.0.0.1:5173',
-      'http://localhost:3456',
-      'http://127.0.0.1:3456',
-    ],
+    origin: true, // local/LAN app: allow phones & tablets on the same network
     credentials: true,
   })
 );
@@ -104,7 +99,7 @@ async function startServer() {
     await prisma.$connect();
     console.log('✅ Connected to SQLite database via Prisma ORM');
 
-    app.listen(PORT, () => {
+    app.listen(Number(PORT), '0.0.0.0', () => {
       console.log(`🚀 RestoPOS Express server running at http://localhost:${PORT}`);
       console.log(`📡 CORS enabled for Vite dev server at http://localhost:5173`);
     });

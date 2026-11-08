@@ -17,7 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Moon, Sun, Monitor, Keyboard, Mouse, User } from 'lucide-react';
+import { Moon, Sun, Monitor, Keyboard, Mouse, User, Menu } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface Branch {
@@ -28,7 +28,7 @@ interface Branch {
 
 export function Header() {
   const { user, activeBranchId, activeBranchName, setActiveBranch } = useAuthStore();
-  const { theme, setTheme, keyboardMode, toggleKeyboardMode } = useUIStore();
+  const { theme, setTheme, keyboardMode, toggleKeyboardMode, setMobileNavOpen } = useUIStore();
   const [branches, setBranches] = React.useState<Branch[]>([]);
 
   React.useEffect(() => {
@@ -41,9 +41,18 @@ export function Header() {
   const ThemeIcon = themeIcon;
 
   return (
-    <header className="flex h-16 items-center justify-between border-b bg-card px-6">
-      {/* Left: Branch info */}
-      <div className="flex items-center gap-4">
+    <header className="flex h-14 sm:h-16 shrink-0 items-center justify-between gap-2 border-b bg-card px-2 sm:px-4 lg:px-6">
+      {/* Left: menu button (phones/tablets) + Branch info */}
+      <div className="flex min-w-0 items-center gap-2 sm:gap-4">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="lg:hidden shrink-0"
+          onClick={() => setMobileNavOpen(true)}
+          aria-label="Open menu"
+        >
+          <Menu className="h-6 w-6" />
+        </Button>
         {user?.role === 'SUPER_ADMIN' && branches.length > 0 ? (
           <Select
             value={activeBranchId || ''}
@@ -52,7 +61,7 @@ export function Header() {
               if (branch) setActiveBranch(branch.id, branch.name);
             }}
           >
-            <SelectTrigger className="w-48">
+            <SelectTrigger className="w-36 sm:w-48">
               <SelectValue placeholder="Select Branch" />
             </SelectTrigger>
             <SelectContent>
@@ -65,7 +74,7 @@ export function Header() {
           </Select>
         ) : (
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-sm">
+            <Badge variant="outline" className="text-sm max-w-[10rem] truncate">
               {activeBranchName || 'No Branch'}
             </Badge>
           </div>
@@ -73,7 +82,7 @@ export function Header() {
       </div>
 
       {/* Right: Controls */}
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-1 sm:gap-2">
         {/* Keyboard/Mouse Mode Toggle */}
         <Button
           variant="ghost"
@@ -110,11 +119,11 @@ export function Header() {
         </DropdownMenu>
 
         {/* User Info */}
-        <div className="flex items-center gap-2 ml-2 pl-2 border-l">
+        <div className="flex items-center gap-2 sm:ml-2 sm:pl-2 sm:border-l">
           <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
             <User className="h-4 w-4 text-primary" />
           </div>
-          <div className="hidden md:block">
+          <div className="hidden xl:block">
             <p className="text-sm font-medium leading-none">{user?.fullName}</p>
             <p className="text-xs text-muted-foreground mt-0.5">
               {user?.role.replace(/_/g, ' ')}

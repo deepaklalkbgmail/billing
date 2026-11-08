@@ -120,6 +120,10 @@ export function POSPage() {
     loadHeldBill,
   } = useBillStore();
 
+  // Phone/tablet (< lg): show either the menu or the cart, with a bottom bar to switch
+  const [mobileView, setMobileView] = useState<'menu' | 'cart'>('menu');
+  const cartCount = cart.reduce((n, i) => n + i.quantity, 0);
+
   // State
   const [categories, setCategories] = useState<CategoryData[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItemData[]>([]);
@@ -463,8 +467,7 @@ export function POSPage() {
       markKotPrinted(unprintedItems.map((i) => i.id));
       toast.success(`KOT sent to kitchen for ${unprintedItems.length} items!`);
     } catch (err) {
-      markKotPrinted(unprintedItems.map((i) => i.id));
-      toast.success(`KOT sent to kitchen for ${unprintedItems.length} items!`);
+      toast.error('KOT print failed');
     }
   };
 
@@ -499,8 +502,7 @@ export function POSPage() {
       toast.success('Bill placed on HOLD successfully');
       clearBill();
     } catch (err) {
-      toast.success('Bill held locally');
-      clearBill();
+      toast.error('Failed to hold bill - not saved');
     }
   };
 
@@ -610,11 +612,11 @@ export function POSPage() {
   ]);
 
   return (
-    <div className="flex h-full w-full gap-2.5 overflow-hidden select-none">
+    <div className="flex h-full w-full gap-2.5 overflow-hidden select-none relative">
       {/* ======================================================== */}
       {/* LEFT PANEL (65%): Order Type, Search, Categories, Grid  */}
       {/* ======================================================== */}
-      <div className="flex flex-col flex-1 h-full min-w-0 bg-card rounded-lg border shadow-sm overflow-hidden">
+      <div className={`${mobileView === 'menu' ? 'flex' : 'hidden'} lg:flex flex-col flex-1 h-full min-w-0 bg-card rounded-lg border shadow-sm overflow-hidden pb-16 lg:pb-0`}>
         {/* Top Header: Order Types & Table / Customer controls */}
         <div className="p-2.5 border-b bg-muted/30 flex flex-wrap items-center justify-between gap-2 shrink-0">
           {/* Order Type Toggle */}
@@ -831,7 +833,7 @@ export function POSPage() {
       {/* ======================================================== */}
       {/* RIGHT PANEL (35%): Order Summary, Cart, Totals, Actions  */}
       {/* ======================================================== */}
-      <div className="w-[380px] lg:w-[420px] flex flex-col h-full bg-card rounded-lg border shadow-sm overflow-hidden shrink-0">
+      <div className={`${mobileView === 'cart' ? 'flex' : 'hidden'} lg:flex w-full lg:w-[420px] flex-col h-full bg-card rounded-lg border shadow-sm overflow-hidden shrink-0 pb-16 lg:pb-0`}>
         {/* Cart Header */}
         <div className="p-3 border-b bg-muted/40 flex items-center justify-between shrink-0">
           <div>
@@ -929,24 +931,24 @@ export function POSPage() {
                     <button
                       type="button"
                       onClick={() => decrementItem(item.id)}
-                      className="h-6 w-6 rounded border bg-background flex items-center justify-center hover:bg-muted active:scale-95 text-foreground"
+                      className="h-9 w-9 lg:h-6 lg:w-6 rounded border bg-background flex items-center justify-center hover:bg-muted active:scale-95 text-foreground"
                     >
                       <Minus className="h-3 w-3" />
                     </button>
-                    <span className="w-7 text-center text-xs font-bold font-mono">
+                    <span className="w-8 lg:w-7 text-center text-sm lg:text-xs font-bold font-mono">
                       {item.quantity}
                     </span>
                     <button
                       type="button"
                       onClick={() => incrementItem(item.id)}
-                      className="h-6 w-6 rounded border bg-background flex items-center justify-center hover:bg-muted active:scale-95 text-foreground"
+                      className="h-9 w-9 lg:h-6 lg:w-6 rounded border bg-background flex items-center justify-center hover:bg-muted active:scale-95 text-foreground"
                     >
                       <Plus className="h-3 w-3" />
                     </button>
                     <button
                       type="button"
                       onClick={() => removeItem(item.id)}
-                      className="h-6 w-6 rounded border border-transparent text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex items-center justify-center ml-1"
+                      className="h-9 w-9 lg:h-6 lg:w-6 rounded border border-transparent text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex items-center justify-center ml-1"
                       title="Remove Item"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -1112,6 +1114,24 @@ export function POSPage() {
             <span>Settle (F12)</span>
           </Button>
         </div>
+      </div>
+
+      {/* Phone/tablet bottom bar: switch between Menu and Cart */}
+      <div className="lg:hidden absolute inset-x-0 bottom-0 z-10 grid grid-cols-2 gap-2 rounded-b-lg border-t bg-card p-2">
+        <button
+          type="button"
+          onClick={() => setMobileView('menu')}
+          className={`h-12 rounded-md text-sm font-semibold border ${mobileView === 'menu' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background'}`}
+        >
+          Menu
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobileView('cart')}
+          className={`h-12 rounded-md text-sm font-semibold border flex items-center justify-center gap-2 ${mobileView === 'cart' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background'}`}
+        >
+          Cart ({cartCount}) · {formatCurrency(netTotal)}
+        </button>
       </div>
 
       {/* ======================================================== */}

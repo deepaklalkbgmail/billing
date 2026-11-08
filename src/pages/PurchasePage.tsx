@@ -529,7 +529,7 @@ export function PurchasePage() {
 
           <div className="space-y-4 py-2 text-xs">
             {/* Header info: Supplier, Inv#, Date */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs">Select Supplier</Label>
                 <Select value={selectedSupplierId} onValueChange={setSelectedSupplierId}>
@@ -652,7 +652,7 @@ export function PurchasePage() {
             </div>
 
             {/* Payment & Summary */}
-            <div className="grid grid-cols-2 gap-3 pt-2 border-t">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t">
               <div className="space-y-2">
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">

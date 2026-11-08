@@ -5,6 +5,8 @@ type Theme = 'light' | 'dark' | 'system';
 interface UIState {
   theme: Theme;
   sidebarCollapsed: boolean;
+  mobileNavOpen: boolean; // off-canvas menu on phones/tablets
+  setMobileNavOpen: (open: boolean) => void;
   keyboardMode: boolean; // true = keyboard-first POS, false = mouse/touch
   showShortCodes: boolean; // show item short codes on cards
 
@@ -43,6 +45,8 @@ export const useUIStore = create<UIState>((set, get) => {
   return {
     theme: storedTheme,
     sidebarCollapsed: false,
+    mobileNavOpen: false,
+    setMobileNavOpen: (open) => set({ mobileNavOpen: open }),
     keyboardMode: storedKeyboardMode,
     showShortCodes: true,
 
