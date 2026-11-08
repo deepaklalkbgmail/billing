@@ -51,6 +51,7 @@ import {
   Legend,
 } from 'recharts';
 import toast from 'react-hot-toast';
+import { Separator } from '@/components/ui/separator';
 
 export function ReportsPage() {
   const { user, activeBranchId } = useAuthStore();

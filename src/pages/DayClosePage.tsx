@@ -499,7 +499,7 @@ export function DayClosePage() {
             <CardDescription className="text-xs">
               Audit log of closed till drawers, expected vs actual cash counts, and variances
             </CardDescription>
-          </CardHeader>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border overflow-x-auto">

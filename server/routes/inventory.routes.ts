@@ -39,7 +39,7 @@ router.get('/items', authenticateToken, async (req: Request, res: Response): Pro
 
     // If lowStock is requested, filter where currentStock <= minStock
     let result = items;
-    if (lowStock === 'true' || lowStock === true) {
+    if (lowStock === 'true') {
       result = items.filter((item) => item.currentStock <= item.minStock);
     }
 
