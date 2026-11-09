@@ -5,15 +5,17 @@ subtitle: "Multi-Branch Restaurant Billing, Inventory & Expense Management"
 
 # 1. About this manual
 
+> **About the screenshots:** the pictures in this manual were taken from the real software using sample data for a fictional restaurant ("Spice Garden"). Your own names, dishes and amounts will differ.
+
 RestoPOS is a restaurant billing (POS) system that runs on your own computer. It handles billing at the counter, the kitchen ticket (KOT), stock, supplier purchases, daily expenses, cash-drawer closing, GST and reports — for up to four branches plus the owner's head-office view.
 
 This manual explains **every screen, every button and every label** in the software, in plain language. Find your role in the table below and read the chapters marked for you.
 
 | You are… | Read these chapters first |
 |---|---|
-| **Cashier** (takes orders, bills, counter cash) | 2, 3, 5 (Login, Top bar), 6.2 POS, 6.7 Expenses, 6.8 Day Close, 10 |
+| **Cashier** (takes orders, bills, counter cash) | 2, 3, 5 (Login, Top bar), 6.2 POS, 6.6 Expenses, 6.7 Day Close, 10 |
 | **Branch Manager** (stock, menu, expenses, day close of one branch) | 2, 3, 5, 6.1–6.9, 9, 10 |
-| **Owner / Super Admin** (all branches, settings, reports, users) | Everything, especially 6.3, 6.9, 6.10 and 7 |
+| **Owner / Super Admin** (all branches, settings, reports, users) | Everything, especially 6.3, 6.8, 6.9 and 7 |
 | **Person installing / maintaining the computer** | 11 (Setup, backup, phone access), 12 (Troubleshooting) |
 
 > **Important to know before you start:** a few things in the original plan are *not available in this version of the software yet* (for example, adding tables, adding branches, inter-branch stock transfer screen, bill history/cancel screen). They are listed honestly in **Chapter 13 — Current limitations**. Please read it so you are not surprised.
@@ -113,7 +115,7 @@ The software automatically adapts to the screen size:
 | **Password** | Type your password. |
 | **Sign In to Terminal** | Press to enter. A green message "Welcome back, *your name*!" confirms. |
 
-If the username or password is wrong, a red message appears; try again. Ask the owner to reset a forgotten password (6.10, *Staff Users*).
+If the username or password is wrong, a red message appears; try again. Ask the owner to reset a forgotten password (6.9, *Staff Users*).
 
 ## 5.2 The top bar
 
@@ -196,7 +198,7 @@ The heart of the software. It has a **menu side** (left) and an **order/cart sid
 | **Delivery** | Home delivery; also shows **Customer Name / Customer Phone** and **Parcel**. |
 | **Table: Select Table** | Choose the table number/name for dine-in. *(Tables must already exist — see Chapter 13.)* |
 | **Customer Name / Customer Phone** | Optional details for takeaway/delivery (useful for credit/due customers and delivery calls). |
-| **Held Bills (F6)** | Opens the list of orders that are saved but not paid (6.2.5). |
+| **Held Bills (F6)** | Opens the list of orders that are saved but not paid (6.2.7). |
 
 ### 6.2.2 Finding and adding dishes
 

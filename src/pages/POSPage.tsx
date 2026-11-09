@@ -509,7 +509,10 @@ export function POSPage() {
         netTotal,
       };
 
-      await billingAPI.createBill(billPayload);
+      const created = await billingAPI.createBill(billPayload);
+      const newId = created.data?.data?.id || created.data?.id;
+      if (!newId) throw new Error('No bill id returned');
+      await billingAPI.holdBill(newId);
       toast.success('Bill placed on HOLD successfully');
       clearBill();
     } catch (err) {
@@ -517,16 +520,26 @@ export function POSPage() {
     }
   };
 
-  // Fetch Held Bills
+  // Fetch Held Bills (parked via F4) and open/unpaid bills (saved via F1)
   const handleOpenHeldBills = async () => {
     try {
-      const res = await billingAPI.getHeldBills(activeBranchId || '').catch(() => ({ data: [] }));
-      const list = res.data?.data || res.data || [];
+      const branchId = (activeBranchId || user?.branchId) as string;
+      if (!branchId) {
+        toast.error('Please select a branch (top bar) first');
+        return;
+      }
+      const [heldRes, activeRes] = await Promise.all([
+        billingAPI.getHeldBills(branchId),
+        billingAPI.getOpenBills(branchId),
+      ]);
+      const pick = (r: any) => r.data?.data?.bills || [];
+      const list = [...pick(heldRes), ...pick(activeRes)].sort(
+        (a: any, b: any) => +new Date(b.createdAt) - +new Date(a.createdAt)
+      );
       setHeldBillsList(list);
       setHeldBillsDialogOpen(true);
     } catch (err) {
-      setHeldBillsList([]);
-      setHeldBillsDialogOpen(true);
+      toast.error('Failed to load held bills');
     }
   };
 

@@ -308,7 +308,7 @@ export function DashboardPage() {
                     tickLine={false}
                     axisLine={false}
                     fontSize={12}
-                    tickFormatter={(val) => `₹${val / 1000}k`}
+                    tickFormatter={(val) => (val >= 1000 ? `₹${+(val / 1000).toFixed(1)}k` : `₹${val}`)}
                   />
                   <Tooltip
                     cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }}

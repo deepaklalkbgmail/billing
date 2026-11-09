@@ -87,6 +87,8 @@ export const billingAPI = {
     api.post(`/billing/bills/${id}/cancel`, { reason }),
   getHeldBills: (branchId: string) =>
     api.get('/billing/bills', { params: { branchId, status: 'HELD' } }),
+  getOpenBills: (branchId: string) =>
+    api.get('/billing/bills', { params: { branchId, status: 'ACTIVE' } }),
   printKOT: (billId: string, itemIds: string[]) =>
     api.post(`/billing/bills/${billId}/kot`, { itemIds }),
   printReceipt: (billId: string) =>
